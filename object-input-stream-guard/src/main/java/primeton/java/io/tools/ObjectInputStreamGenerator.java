@@ -39,6 +39,10 @@ public class ObjectInputStreamGenerator {
     public static final File TARGET_DIR = new File("./generated");
 
     public static void main(String[] args) throws IOException {
+        System.out.println("=====");
+        System.out.println(System.getProperties().get("sun.boot.library.path"));
+        System.out.println(System.getProperties().get("java.vm.version"));
+        System.out.println("=====");
         TARGET_DIR.delete();
         InputStream is = ObjectInputStreamGenerator.class.getResourceAsStream("/java/io/ObjectInputStream.class");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

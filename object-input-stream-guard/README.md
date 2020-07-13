@@ -10,7 +10,7 @@ cd target
  
 3. 选择合适的JDK版本(需要和实际程序运行的JDK版本一致), 设置JAVA_HOME, 进入target目录, 执行     
 ```sh
-java -jar Primeton-ObjectInputStreamGuard.jar
+java -jar Generator.jar
 ```
 执行命令后, 会在当前目录的generated目录下生成新的java.io.ObjectInputStream相关的Class
  
