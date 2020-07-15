@@ -13,6 +13,7 @@
 
 package primeton.java.io;
 
+import java.io.ObjectStreamClass;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,6 +25,62 @@ import java.util.Set;
  */
 
 public class ObjectInputStreamGuard {
+
+    public static void check(ObjectStreamClass clazz) {
+        // 会在 resolveClass 方法一开始调用
+        System.out.println("6666::" + clazz.getName());
+        check(clazz.getName());
+    }
+
+    @SuppressWarnings("rawtypes")
+    public static void check(Class clazz) {
+        // 会在 resolveClass 方法return的时候调用
+        System.out.println("7777::" + clazz.getName());
+        check(clazz.getName());
+    }
+
+    // ------
+    //
+    // ------
+
+    // 下面的拒绝列表来自
+    // https://github.com/FasterXML/jackson-databind/blob/master/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/SubTypeValidator.java
+    // 下面的逻辑也是, 经过了翻译一次
+    public static void check(String className) {
+        boolean denied = false;
+        if (DEFAULT_NO_DESER_CLASS_NAMES.contains(className)) {
+            denied = true;
+        }
+        // 为了适应String参数
+//        if (!denied && className.startsWith(PREFIX_SPRING)) {
+//            for (Class<?> cls = clazz; (cls != null) && (cls != Object.class); cls = cls.getSuperclass()) {
+//                String name = cls.getSimpleName();
+//                // looking for "AbstractBeanFactoryPointcutAdvisor" but no point
+//                // to allow any is there?
+//                if ("AbstractPointcutAdvisor".equals(name)
+//                        // ditto for "FileSystemXmlApplicationContext": block
+//                        // all ApplicationContexts
+//                        || "AbstractApplicationContext".equals(name)) {
+//                    denied = true;
+//                    break;
+//                }
+//            }
+//        }
+        if (!denied && className.startsWith(PREFIX_C3P0)) {
+            // [databind#1737]; more 3rd party
+            // s.add("com.mchange.v2.c3p0.JndiRefForwardingDataSource");
+            // s.add("com.mchange.v2.c3p0.WrapperConnectionPoolDataSource");
+            // [databind#1931]; more 3rd party
+            // com.mchange.v2.c3p0.ComboPooledDataSource
+            // com.mchange.v2.c3p0.debug.AfterCloseLoggingComboPooledDataSource
+            if (className.endsWith("DataSource")) {
+                denied = true;
+            }
+        }
+        if (denied) {
+            throw new UnsupportedOperationException(className + "is in deny-list, so donot supported deserialization using ObjectInputStream");
+        }
+    }
 
     protected final static String PREFIX_SPRING = "org.springframework.";
 
@@ -208,45 +265,6 @@ public class ObjectInputStreamGuard {
         DEFAULT_NO_DESER_CLASS_NAMES = Collections.unmodifiableSet(s);
     }
 
-    // 上面的拒绝列表来自
-    // https://github.com/FasterXML/jackson-databind/blob/master/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/SubTypeValidator.java
-    // 下面的逻辑也是, 经过了翻译一次
-    public static void check(Class clazz) {
-        System.out.println("6666::");
-        String className = clazz.getName();
-        boolean denied = false;
-        if (DEFAULT_NO_DESER_CLASS_NAMES.contains(className)) {
-            denied = true;
-        }
-        if (!denied && className.startsWith(PREFIX_SPRING)) {
-            for (Class<?> cls = clazz; (cls != null) && (cls != Object.class); cls = cls.getSuperclass()) {
-                String name = cls.getSimpleName();
-                // looking for "AbstractBeanFactoryPointcutAdvisor" but no point
-                // to allow any is there?
-                if ("AbstractPointcutAdvisor".equals(name)
-                        // ditto for "FileSystemXmlApplicationContext": block
-                        // all ApplicationContexts
-                        || "AbstractApplicationContext".equals(name)) {
-                    denied = true;
-                    break;
-                }
-            }
-        }
-        if (!denied && className.startsWith(PREFIX_C3P0)) {
-            // [databind#1737]; more 3rd party
-            // s.add("com.mchange.v2.c3p0.JndiRefForwardingDataSource");
-            // s.add("com.mchange.v2.c3p0.WrapperConnectionPoolDataSource");
-            // [databind#1931]; more 3rd party
-            // com.mchange.v2.c3p0.ComboPooledDataSource
-            // com.mchange.v2.c3p0.debug.AfterCloseLoggingComboPooledDataSource
-            if (className.endsWith("DataSource")) {
-                denied = true;
-            }
-        }
-        if (denied) {
-            throw new UnsupportedOperationException(className + "is in deny-list, so donot supported deserialization using ObjectInputStream");
-        }
-    }
 }
 
 /*

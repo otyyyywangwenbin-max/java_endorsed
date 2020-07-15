@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import org.objectweb.asm.ClassReader;
@@ -33,7 +34,7 @@ import org.objectweb.asm.Opcodes;
  *
  * @author wangwb (mailto:wangwb@primeton.com)
  */
-
+@SuppressWarnings({ "unchecked", "rawtypes" })
 public class ObjectInputStreamGenerator {
 
     public static final File TARGET_DIR = new File("./generated");
@@ -44,6 +45,21 @@ public class ObjectInputStreamGenerator {
         System.out.println(System.getProperties().get("java.vm.version"));
         System.out.println("=====");
         TARGET_DIR.delete();
+
+        {
+            File file = new File(TARGET_DIR, "generated.info");
+            StringBuilder info = new StringBuilder(4096);
+            Properties properties = System.getProperties();
+            for (Object key : properties.keySet()) {
+                info.append(key).append("=").append(properties.get(key)).append("\r\n");
+            }
+            file.getParentFile().mkdirs();
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(info.toString().getBytes());
+            fos.flush();
+            fos.close();
+        }
+
         InputStream is = ObjectInputStreamGenerator.class.getResourceAsStream("/java/io/ObjectInputStream.class");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         copy(is, baos);
@@ -111,6 +127,11 @@ public class ObjectInputStreamGenerator {
     static class MyMethodVisitor extends MethodVisitor {
         public MyMethodVisitor(MethodVisitor methodVisitor) {
             super(Opcodes.ASM8, methodVisitor);
+        }
+
+        public void visitCode() {
+            mv.visitVarInsn(Opcodes.ALOAD, 1);
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "primeton/java/io/ObjectInputStreamGuard", "check", "(Ljava/io/ObjectStreamClass;)V", false);
         }
 
         public void visitInsn(int opcode) {
