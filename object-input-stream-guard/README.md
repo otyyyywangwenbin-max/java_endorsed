@@ -7,8 +7,10 @@ mvn clean package
 ```sh
 cd target 
 ```     
+
+> 下面一步很重要
  
-3. 选择合适的JDK版本(需要和实际程序运行的JDK版本一致), 设置JAVA_HOME, 进入target目录, 执行     
+3. **注意** **注意** **注意** 选择合适的JDK版本(**需要和实际程序运行的JDK版本一致**), 设置JAVA_HOME, 进入target目录, 执行     
 ```sh
 java -jar generator.jar
 ```
